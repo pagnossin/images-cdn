@@ -23,7 +23,7 @@ docker compose down -v
 ```
 
 The same image also runs everything in a single container (`docker run -p 8080:8080 images-cdn`), which is what the
-online demo uses: _add the Render URL here_. On the free plan the container has 0.1 CPU, so there the three nodes
+online demo uses: https://images-cdn-98h0.onrender.com. On the free plan the container has 0.1 CPU, so there the three nodes
 run inside one Python process (each with its own port, data directory and NATS connection) instead of separate
 processes; "Crash" in the dashboard closes a node's server and connections and throws away its state, and "Start"
 rebuilds it from disk and the stream. Data is lost when the free instance goes to sleep.

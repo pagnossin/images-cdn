@@ -162,6 +162,10 @@ class Node:
 
     async def _replicate(self, delivery: Delivery) -> None:
         event = delivery.event
+        if self.replication_paused:
+            # the pause can start while a fetch is already waiting: hand the event back
+            await delivery.nak(delay=1.0)
+            return
         if not is_valid_id(event.id) or self.store.has(event.id):
             await delivery.ack()
             return
@@ -234,7 +238,7 @@ class Node:
             try:
                 if len(self.outbox) and self.events.connected:
                     await self.flush_outbox()
-                if time.monotonic() >= next_anti_entropy:
+                if time.monotonic() >= next_anti_entropy and not self.replication_paused:
                     await self.anti_entropy_once()
                     next_anti_entropy = time.monotonic() + interval
             except Exception:

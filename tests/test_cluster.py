@@ -178,6 +178,22 @@ async def test_status_reports_lag_and_contents(cluster, png):
     assert body["id"] in status["recent_ids"]
 
 
+async def test_paused_node_hands_back_events_it_already_fetched(cluster):
+    node3 = cluster.nodes["node3"]
+    for seed in range(50):
+        body = (await upload(cluster, "node1", make_png(500 + seed))).json()
+        if "node3" not in body["holders"]:
+            break
+    node3.replication_paused = True
+    await node3.replicate_batch(timeout=0)
+    assert not node3.store.has(body["id"])
+    assert await node3.events.pending() >= 1
+
+    node3.replication_paused = False
+    await cluster.replicate("node3")
+    assert node3.store.has(body["id"])
+
+
 async def test_replication_can_be_paused_for_the_demo(cluster):
     res = await cluster.clients["node2"].post("/internal/admin/replication", json={"paused": True})
     assert res.json() == {"paused": True}

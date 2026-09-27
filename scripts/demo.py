@@ -110,19 +110,23 @@ def main() -> int:
     step("R2: a node serves an image it does not have yet")
     reader = nodes[-1]
     gw.replication(reader, paused=True)
-    body = None
-    for attempt in range(1, 50):  # pick an image whose synchronous copy did not land on the reader
-        candidate = gw.upload(png(seed + attempt), nodes[0])
-        if reader not in candidate["holders"]:
-            body = candidate
-            break
-    print(f"replication paused on {reader}; uploaded {body['id'][:16]}... to {nodes[0]}, holders {body['holders']}")
-    status, headers = gw.get(body["id"], reader)
-    print(f"GET from {reader}: HTTP {status}, X-Cache {headers.get('x-cache')}, from {headers.get('x-fetched-from')}")
-    assert status == 200 and headers.get("x-cache") == "PEER-FETCH"
-    status, headers = gw.get(body["id"], reader)
-    print(f"GET again from {reader}: HTTP {status}, X-Cache {headers.get('x-cache')} (read repair kept a copy)")
-    gw.replication(reader, paused=False)
+    try:
+        body = None
+        for attempt in range(1, 50):  # pick an image whose synchronous copy did not land on the reader
+            candidate = gw.upload(png(seed + attempt), nodes[0])
+            if reader not in candidate["holders"]:
+                body = candidate
+                break
+        assert body is not None
+        print(f"replication paused on {reader}; uploaded {body['id'][:16]}... to {nodes[0]}, holders {body['holders']}")
+        status, headers = gw.get(body["id"], reader)
+        cache, source = headers.get("x-cache"), headers.get("x-fetched-from")
+        print(f"GET from {reader}: HTTP {status}, X-Cache {cache}, from {source}")
+        assert status == 200 and headers.get("x-cache") == "PEER-FETCH"
+        status, headers = gw.get(body["id"], reader)
+        print(f"GET again from {reader}: HTTP {status}, X-Cache {headers.get('x-cache')} (read repair kept a copy)")
+    finally:
+        gw.replication(reader, paused=False)
 
     step("R3: a crashed node resynchronizes on restart")
     victim = nodes[-1]
