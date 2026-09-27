@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
 <meta charset="utf-8">
-<title>Images CDN: architecture</title>
+<title>Images CDN: architettura</title>
 <style>
   @page { size: 1280px 720px; margin: 0; }
   :root {
@@ -18,37 +18,40 @@
     page-break-after: always; break-after: page; display: flex; flex-direction: column;
   }
   .slide:last-child { page-break-after: auto; break-after: auto; }
-  .kicker { font-size: 14px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); }
-  h1 { font-size: 64px; line-height: 1.05; letter-spacing: -.02em; }
-  h2 { font-size: 34px; line-height: 1.15; letter-spacing: -.01em; margin: 6px 0 20px; }
-  p, li, td, th { font-size: 19px; line-height: 1.45; }
+  .kicker { font-size: 15px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); }
+  h1 { font-size: 68px; line-height: 1.05; letter-spacing: -.02em; }
+  h2 { font-size: 36px; line-height: 1.15; letter-spacing: -.01em; margin: 6px 0 24px; }
+  p, li, td, th { font-size: 21px; line-height: 1.45; }
   .muted { color: var(--muted); }
   .footer { position: absolute; left: 56px; right: 56px; bottom: 18px; display: flex; justify-content: space-between;
             font-size: 13px; color: var(--muted); }
-  .grow { flex: 1; min-height: 0; }
   .row { display: flex; gap: 20px; }
   .col { flex: 1; min-width: 0; }
-  .card { background: var(--panel); border-radius: 12px; padding: 18px 20px; border-left: 5px solid var(--blue); }
-  .card h3 { font-size: 20px; margin-bottom: 6px; }
-  .card p { font-size: 17px; }
+  .card { background: var(--panel); border-radius: 12px; padding: 18px 22px; border-left: 6px solid var(--blue); }
+  .card h3 { font-size: 21px; margin-bottom: 6px; }
+  .card p { font-size: 18px; }
   .card.green { border-color: var(--green); } .card.amber { border-color: var(--amber); }
   .card.red { border-color: var(--red); } .card.violet { border-color: var(--violet); }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
   .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   table { border-collapse: collapse; width: 100%; }
-  th { text-align: left; font-size: 15px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
-       padding: 8px 12px; border-bottom: 2px solid var(--line); }
-  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 17px; }
-  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: .9em; background: var(--panel);
+  td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 19px; }
+  td:first-child { font-weight: 600; width: 32%; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: .88em; background: var(--panel);
          padding: 1px 6px; border-radius: 4px; }
-  .tag { display: inline-block; font-size: 14px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+  .tag { display: inline-block; font-size: 15px; font-weight: 600; padding: 4px 12px; border-radius: 99px; }
   .tag.blue { background: var(--blue-soft); color: var(--blue); } .tag.green { background: var(--green-soft); color: var(--green); }
   .tag.amber { background: var(--amber-soft); color: var(--amber); } .tag.red { background: var(--red-soft); color: var(--red); }
-  .quote { font-size: 30px; line-height: 1.35; font-weight: 600; letter-spacing: -.01em; }
+  .pill { display: inline-block; font-size: 18px; font-weight: 600; padding: 8px 16px; border-radius: 10px;
+          background: var(--green-soft); color: var(--green); }
+  .quote { font-size: 25px; line-height: 1.4; font-weight: 600; }
   svg text { font-family: "Segoe UI", system-ui, sans-serif; }
-  ul.clean { list-style: none; } ul.clean li { padding-left: 22px; position: relative; margin-bottom: 8px; }
-  ul.clean li::before { content: ""; position: absolute; left: 4px; top: 11px; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+  .req { display: grid; grid-template-columns: 90px 1fr 1fr; gap: 18px; align-items: center; padding: 16px 0;
+         border-bottom: 1px solid var(--line); }
+  .req .id { font-size: 30px; font-weight: 800; }
+  .req .what { font-size: 20px; font-weight: 600; }
+  .req .how { font-size: 19px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -58,445 +61,286 @@
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#3b4652"/>
     </marker>
-    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#2457d6"/>
-    </marker>
     <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#1c7a3c"/>
     </marker>
     <marker id="arrow-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#5b3fc4"/>
     </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9a5b00"/>
+    </marker>
   </defs>
 </svg>
 
-<!-- 1. Title -->
+<!-- 1. Titolo -->
 <section class="slide" style="justify-content:center; background: linear-gradient(135deg, #ffffff 55%, #eef3ff 100%);">
-  <div class="kicker">Backend Developer exercise 2</div>
+  <div class="kicker">Backend Developer · Esercizio 2</div>
   <h1 style="margin:14px 0 18px">Images CDN</h1>
-  <p style="font-size:28px; max-width:900px" class="muted">A distributed, on-premise cluster that stores images and serves them over HTTP.
-    The design, and a working prototype that demonstrates it.</p>
+  <p style="font-size:28px; max-width:950px" class="muted">Un CDN distribuito on-premise che salva immagini e le serve via HTTP:
+    il design del sistema, più un prototipo che lo dimostra.</p>
   <div class="row" style="margin-top:44px; gap:14px">
-    <span class="tag blue">Content-addressed storage</span>
-    <span class="tag green">NATS JetStream replication log</span>
-    <span class="tag amber">Fetch on miss + read repair</span>
-    <span class="tag red">Log replay + anti-entropy</span>
+    <span class="tag blue">Nome = impronta del contenuto</span>
+    <span class="tag green">Copia su 2 nodi subito</span>
+    <span class="tag amber">Registro degli upload</span>
+    <span class="tag red">Recupero automatico</span>
   </div>
-  <p class="muted" style="margin-top:70px; font-size:17px">Federico Pagnossin · September 2026</p>
+  <p class="muted" style="margin-top:70px; font-size:17px">Federico Pagnossin · settembre 2026</p>
 </section>
 
-<!-- 2. Requirements -->
+<!-- 2. Requisiti -->
 <section class="slide">
-  <div class="kicker">The problem</div>
-  <h2>Three requirements, one answer each</h2>
-  <div class="grow" style="display:flex; flex-direction:column; gap:16px">
-    <div class="row" style="align-items:stretch">
-      <div class="card" style="flex:0 0 470px"><h3>R1 · Synchronization</h3><p>Nodes stay in permanent sync; a new image (POST) reaches every node as quickly as possible.</p></div>
-      <div class="col" style="display:flex; align-items:center"><p><b>Upload event on a durable log</b> that every node consumes; each node pulls the bytes from a node that has them, in parallel. The image is on 2 nodes before the <code>201</code>.</p></div>
-    </div>
-    <div class="row" style="align-items:stretch">
-      <div class="card green" style="flex:0 0 470px"><h3>R2 · Read before sync</h3><p>A node must return an image even if it has not been synchronized on that node yet.</p></div>
-      <div class="col" style="display:flex; align-items:center"><p><b>Fetch on miss:</b> the node asks the image's owners (which every node can compute), streams it to the client and keeps a copy (read repair).</p></div>
-    </div>
-    <div class="row" style="align-items:stretch">
-      <div class="card red" style="flex:0 0 470px"><h3>R3 · Recovery</h3><p>A node that goes down must resynchronize as quickly as possible at the next startup.</p></div>
-      <div class="col" style="display:flex; align-items:center"><p><b>Replay of the log</b> from the node's last acknowledged event: exactly what it missed. <b>Anti-entropy</b> as fallback. The node serves traffic while it catches up.</p></div>
-    </div>
-    <p class="muted" style="font-size:17px">Constraint given: images are never deleted. The design turns this into its main simplification (next slide).</p>
+  <div class="kicker">Il problema</div>
+  <h2>Tre requisiti</h2>
+  <div class="req" style="border-top:1px solid var(--line)">
+    <div class="id" style="color:var(--blue)">R1</div>
+    <div class="what">Un'immagine caricata deve arrivare su tutti i nodi, il prima possibile</div>
+    <div class="how">Ogni upload viene annunciato su un registro condiviso: ogni nodo lo legge e scarica l'immagine</div>
   </div>
+  <div class="req">
+    <div class="id" style="color:var(--green)">R2</div>
+    <div class="what">Ogni nodo deve rispondere, anche se non ha ancora l'immagine</div>
+    <div class="how">Il nodo la chiede agli altri, la restituisce e se ne tiene una copia</div>
+  </div>
+  <div class="req">
+    <div class="id" style="color:var(--red)">R3</div>
+    <div class="what">Un nodo che si riavvia deve rimettersi in pari velocemente</div>
+    <div class="how">Il registro ricorda fin dove era arrivato: il nodo recupera solo quello che ha perso</div>
+  </div>
+  <p class="muted" style="margin-top:26px; font-size:19px">Vincolo: le immagini non vengono mai cancellate. È proprio questo che semplifica tutto il resto.</p>
   <div class="footer"><span>Images CDN</span><span>2</span></div>
 </section>
 
-<!-- 3. Key idea -->
+<!-- 3. Idea chiave -->
 <section class="slide">
-  <div class="kicker">Key idea</div>
-  <h2>The id of an image is the SHA-256 of its bytes</h2>
-  <svg viewBox="0 0 1168 150" width="1168" height="150">
-    <rect x="0" y="35" width="210" height="80" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
-    <text x="105" y="70" text-anchor="middle" font-size="20" font-weight="600">image bytes</text>
-    <text x="105" y="95" text-anchor="middle" font-size="15" fill="#5b6673">PNG · JPEG · GIF · WebP</text>
-    <line x1="215" y1="75" x2="300" y2="75" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-    <rect x="305" y="35" width="160" height="80" rx="12" fill="#e8efff" stroke="#2457d6"/>
-    <text x="385" y="82" text-anchor="middle" font-size="22" font-weight="700" fill="#2457d6">SHA-256</text>
-    <line x1="470" y1="75" x2="555" y2="75" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-    <rect x="560" y="35" width="290" height="80" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
-    <text x="705" y="70" text-anchor="middle" font-size="16" fill="#5b6673">id</text>
-    <text x="705" y="96" text-anchor="middle" font-size="18" font-family="Consolas, monospace">9f86d081884c…0f00a08</text>
-    <line x1="855" y1="75" x2="940" y2="75" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-    <rect x="945" y="35" width="223" height="80" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
-    <text x="1056" y="70" text-anchor="middle" font-size="16" fill="#5b6673">GET /images/{id}</text>
-    <text x="1056" y="96" text-anchor="middle" font-size="16" font-family="Consolas, monospace">/data/9f/86/9f86…</text>
+  <div class="kicker">L'idea chiave</div>
+  <h2>Il nome di un'immagine è l'impronta del suo contenuto</h2>
+  <svg viewBox="0 0 1168 130" width="1168" height="130">
+    <rect x="0" y="25" width="220" height="80" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+    <text x="110" y="72" text-anchor="middle" font-size="21" font-weight="600">l'immagine</text>
+    <line x1="226" y1="65" x2="306" y2="65" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="312" y="25" width="190" height="80" rx="12" fill="#e8efff" stroke="#2457d6"/>
+    <text x="407" y="60" text-anchor="middle" font-size="21" font-weight="700" fill="#2457d6">impronta</text>
+    <text x="407" y="86" text-anchor="middle" font-size="15" fill="#2457d6">SHA-256</text>
+    <line x1="508" y1="65" x2="588" y2="65" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="594" y="25" width="260" height="80" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+    <text x="724" y="58" text-anchor="middle" font-size="15" fill="#5b6673">nome</text>
+    <text x="724" y="86" text-anchor="middle" font-size="19" font-family="Consolas, monospace">9f86d081…0f00a08</text>
+    <line x1="860" y1="65" x2="940" y2="65" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="946" y="25" width="222" height="80" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+    <text x="1057" y="72" text-anchor="middle" font-size="17" font-family="Consolas, monospace">GET /images/9f86…</text>
   </svg>
-  <p style="margin:8px 0 18px">Immutable, content-addressed and never deleted: the data of every node is a <b>set that only grows</b>.</p>
+  <p style="margin:6px 0 22px">Stessa immagine, stesso nome. E un'immagine non cambia mai e non viene mai cancellata. Quindi:</p>
   <div class="grid4">
-    <div class="card"><h3>No conflicts</h3><p>Two nodes can never hold different versions of an id. Merging two nodes is a set union.</p></div>
-    <div class="card green"><h3>Idempotent</h3><p>Same upload twice, same event twice, same file twice: no effect. Every mechanism can simply retry.</p></div>
-    <div class="card amber"><h3>Integrity</h3><p>Every node verifies the hash of every file it receives. Corruption cannot spread.</p></div>
-    <div class="card violet"><h3>Cache forever</h3><p><code>Cache-Control: immutable</code>, one year, <code>ETag = id</code>. Browsers and CDNs never revalidate.</p></div>
+    <div class="card"><h3>Nessun conflitto</h3><p>Due nodi non possono avere versioni diverse della stessa immagine.</p></div>
+    <div class="card green"><h3>Ripetere è sicuro</h3><p>Caricare due volte, o ricevere due volte lo stesso annuncio, non ha effetti.</p></div>
+    <div class="card amber"><h3>Integrità verificabile</h3><p>Chi riceve un file ricalcola l'impronta: se non corrisponde, lo scarta.</p></div>
+    <div class="card violet"><h3>Cache per sempre</h3><p>Browser e CDN possono conservarla senza mai ricontrollarla.</p></div>
   </div>
   <div class="footer"><span>Images CDN</span><span>3</span></div>
 </section>
 
-<!-- 4. Architecture -->
+<!-- 4. Architettura -->
 <section class="slide">
-  <div class="kicker">Architecture</div>
-  <h2>Identical nodes, a durable log, no leader</h2>
-  <svg viewBox="0 0 1168 520" width="1168" height="520" class="grow">
-    <!-- clients and load balancer -->
-    <rect x="0" y="215" width="120" height="74" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
-    <text x="60" y="248" text-anchor="middle" font-size="18" font-weight="600">Clients</text>
-    <text x="60" y="270" text-anchor="middle" font-size="13" fill="#5b6673">browsers · apps</text>
-    <line x1="122" y1="252" x2="168" y2="252" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-    <rect x="172" y="192" width="160" height="120" rx="12" fill="#e8efff" stroke="#2457d6"/>
-    <text x="252" y="226" text-anchor="middle" font-size="18" font-weight="600" fill="#2457d6">Load balancer</text>
-    <text x="252" y="250" text-anchor="middle" font-size="14">HAProxy pair</text>
-    <text x="252" y="270" text-anchor="middle" font-size="14">keepalived VIP</text>
-    <text x="252" y="290" text-anchor="middle" font-size="14">health checks</text>
-    <!-- LB to nodes -->
-    <path d="M334 230 C 370 230, 370 80, 402 80" fill="none" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-    <line x1="334" y1="252" x2="402" y2="252" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-    <path d="M334 274 C 370 274, 370 424, 402 424" fill="none" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-
-    <!-- node template x3 -->
+  <div class="kicker">Architettura</div>
+  <h2>Nodi tutti uguali e un registro condiviso</h2>
+  <svg viewBox="0 0 1168 380" width="1168" height="380">
+    <rect x="0" y="150" width="130" height="76" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+    <text x="65" y="195" text-anchor="middle" font-size="20" font-weight="600">Client</text>
+    <line x1="132" y1="188" x2="178" y2="188" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="182" y="138" width="170" height="100" rx="12" fill="#e8efff" stroke="#2457d6"/>
+    <text x="267" y="180" text-anchor="middle" font-size="19" font-weight="600" fill="#2457d6">Load balancer</text>
+    <text x="267" y="206" text-anchor="middle" font-size="15">distribuisce</text>
+    <text x="267" y="225" text-anchor="middle" font-size="15">le richieste</text>
+    <path d="M354 170 C 390 170, 390 58, 426 58" fill="none" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="354" y1="188" x2="426" y2="188" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M354 206 C 390 206, 390 318, 426 318" fill="none" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
     <g>
-      <rect x="406" y="14" width="470" height="134" rx="14" fill="#ffffff" stroke="#9aa7b6" stroke-width="1.5"/>
-      <text x="422" y="38" font-size="15" font-weight="700" fill="#5b6673">NODE 1</text>
-      <rect x="422" y="52" width="118" height="78" rx="10" fill="#f4f6f9" stroke="#d3d9e1"/>
-      <text x="481" y="86" text-anchor="middle" font-size="17" font-weight="600">Nginx</text>
-      <text x="481" y="108" text-anchor="middle" font-size="13" fill="#5b6673">sendfile · hits</text>
-      <line x1="542" y1="91" x2="584" y2="91" stroke="#3b4652" stroke-width="1.8" marker-end="url(#arrow)"/>
-      <text x="563" y="83" text-anchor="middle" font-size="12" fill="#5b6673">miss</text>
-      <rect x="588" y="52" width="150" height="78" rx="10" fill="#e8efff" stroke="#2457d6"/>
-      <text x="663" y="86" text-anchor="middle" font-size="17" font-weight="600" fill="#2457d6">image-service</text>
-      <text x="663" y="108" text-anchor="middle" font-size="13" fill="#5b6673">upload · peers · sync</text>
-      <path d="M760 60 a44 10 0 0 0 88 0 a44 10 0 0 0 -88 0 v60 a44 10 0 0 0 88 0 v-60" fill="#f4f6f9" stroke="#9aa7b6"/>
-      <text x="804" y="98" text-anchor="middle" font-size="14" font-weight="600">local disk</text>
-      <text x="804" y="116" text-anchor="middle" font-size="11" fill="#5b6673" font-family="Consolas, monospace">/data/9f/86/…</text>
+      <rect x="430" y="10" width="330" height="96" rx="14" fill="#fff" stroke="#9aa7b6" stroke-width="1.5"/>
+      <text x="450" y="50" font-size="21" font-weight="700">Nodo 1</text>
+      <text x="450" y="80" font-size="16" fill="#5b6673">server + disco</text>
+      <path d="M640 34 a44 10 0 0 0 88 0 a44 10 0 0 0 -88 0 v46 a44 10 0 0 0 88 0 v-46" fill="#f4f6f9" stroke="#9aa7b6"/>
     </g>
-    <g transform="translate(0,172)">
-      <rect x="406" y="14" width="470" height="134" rx="14" fill="#ffffff" stroke="#9aa7b6" stroke-width="1.5"/>
-      <text x="422" y="38" font-size="15" font-weight="700" fill="#5b6673">NODE 2</text>
-      <rect x="422" y="52" width="118" height="78" rx="10" fill="#f4f6f9" stroke="#d3d9e1"/>
-      <text x="481" y="86" text-anchor="middle" font-size="17" font-weight="600">Nginx</text>
-      <text x="481" y="108" text-anchor="middle" font-size="13" fill="#5b6673">sendfile · hits</text>
-      <line x1="542" y1="91" x2="584" y2="91" stroke="#3b4652" stroke-width="1.8" marker-end="url(#arrow)"/>
-      <text x="563" y="83" text-anchor="middle" font-size="12" fill="#5b6673">miss</text>
-      <rect x="588" y="52" width="150" height="78" rx="10" fill="#e8efff" stroke="#2457d6"/>
-      <text x="663" y="86" text-anchor="middle" font-size="17" font-weight="600" fill="#2457d6">image-service</text>
-      <text x="663" y="108" text-anchor="middle" font-size="13" fill="#5b6673">upload · peers · sync</text>
-      <path d="M760 60 a44 10 0 0 0 88 0 a44 10 0 0 0 -88 0 v60 a44 10 0 0 0 88 0 v-60" fill="#f4f6f9" stroke="#9aa7b6"/>
-      <text x="804" y="98" text-anchor="middle" font-size="14" font-weight="600">local disk</text>
-      <text x="804" y="116" text-anchor="middle" font-size="11" fill="#5b6673" font-family="Consolas, monospace">/data/9f/86/…</text>
+    <g transform="translate(0,130)">
+      <rect x="430" y="10" width="330" height="96" rx="14" fill="#fff" stroke="#9aa7b6" stroke-width="1.5"/>
+      <text x="450" y="50" font-size="21" font-weight="700">Nodo 2</text>
+      <text x="450" y="80" font-size="16" fill="#5b6673">server + disco</text>
+      <path d="M640 34 a44 10 0 0 0 88 0 a44 10 0 0 0 -88 0 v46 a44 10 0 0 0 88 0 v-46" fill="#f4f6f9" stroke="#9aa7b6"/>
     </g>
-    <g transform="translate(0,344)">
-      <rect x="406" y="14" width="470" height="134" rx="14" fill="#ffffff" stroke="#9aa7b6" stroke-width="1.5"/>
-      <text x="422" y="38" font-size="15" font-weight="700" fill="#5b6673">NODE 3</text>
-      <rect x="422" y="52" width="118" height="78" rx="10" fill="#f4f6f9" stroke="#d3d9e1"/>
-      <text x="481" y="86" text-anchor="middle" font-size="17" font-weight="600">Nginx</text>
-      <text x="481" y="108" text-anchor="middle" font-size="13" fill="#5b6673">sendfile · hits</text>
-      <line x1="542" y1="91" x2="584" y2="91" stroke="#3b4652" stroke-width="1.8" marker-end="url(#arrow)"/>
-      <text x="563" y="83" text-anchor="middle" font-size="12" fill="#5b6673">miss</text>
-      <rect x="588" y="52" width="150" height="78" rx="10" fill="#e8efff" stroke="#2457d6"/>
-      <text x="663" y="86" text-anchor="middle" font-size="17" font-weight="600" fill="#2457d6">image-service</text>
-      <text x="663" y="108" text-anchor="middle" font-size="13" fill="#5b6673">upload · peers · sync</text>
-      <path d="M760 60 a44 10 0 0 0 88 0 a44 10 0 0 0 -88 0 v60 a44 10 0 0 0 88 0 v-60" fill="#f4f6f9" stroke="#9aa7b6"/>
-      <text x="804" y="98" text-anchor="middle" font-size="14" font-weight="600">local disk</text>
-      <text x="804" y="116" text-anchor="middle" font-size="11" fill="#5b6673" font-family="Consolas, monospace">/data/9f/86/…</text>
+    <g transform="translate(0,260)">
+      <rect x="430" y="10" width="330" height="96" rx="14" fill="#fff" stroke="#9aa7b6" stroke-width="1.5"/>
+      <text x="450" y="50" font-size="21" font-weight="700">Nodo 3</text>
+      <text x="450" y="80" font-size="16" fill="#5b6673">server + disco</text>
+      <path d="M640 34 a44 10 0 0 0 88 0 a44 10 0 0 0 -88 0 v46 a44 10 0 0 0 88 0 v-46" fill="#f4f6f9" stroke="#9aa7b6"/>
     </g>
-
-    <!-- internal HTTP mesh -->
-    <line x1="663" y1="146" x2="663" y2="222" stroke="#5b3fc4" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#arrow-violet)" marker-end="url(#arrow-violet)"/>
-    <line x1="663" y1="318" x2="663" y2="394" stroke="#5b3fc4" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#arrow-violet)" marker-end="url(#arrow-violet)"/>
-    <text x="676" y="190" font-size="13" fill="#5b3fc4" font-weight="600">internal HTTP</text>
-    <text x="676" y="206" font-size="12" fill="#5b3fc4">sync copy · peer fetch · anti-entropy</text>
-
-    <!-- NATS -->
-    <rect x="940" y="120" width="228" height="270" rx="14" fill="#e4f3e9" stroke="#1c7a3c"/>
-    <text x="1054" y="152" text-anchor="middle" font-size="19" font-weight="700" fill="#1c7a3c">NATS JetStream</text>
-    <circle cx="1004" cy="196" r="20" fill="#fff" stroke="#1c7a3c"/><circle cx="1054" cy="196" r="20" fill="#fff" stroke="#1c7a3c"/><circle cx="1104" cy="196" r="20" fill="#fff" stroke="#1c7a3c"/>
-    <text x="1054" y="240" text-anchor="middle" font-size="14">3 servers · stream R=3</text>
-    <text x="1054" y="272" text-anchor="middle" font-size="14" font-weight="600">image.uploaded</text>
-    <text x="1054" y="292" text-anchor="middle" font-size="13" fill="#5b6673">metadata only: id, size, holders</text>
-    <text x="1054" y="322" text-anchor="middle" font-size="14" font-weight="600">1 durable consumer / node</text>
-    <text x="1054" y="342" text-anchor="middle" font-size="13" fill="#5b6673">its position survives restarts</text>
-    <text x="1054" y="368" text-anchor="middle" font-size="13" fill="#5b6673">retention 7 days</text>
-    <!-- nodes <-> NATS -->
-    <path d="M880 80 C 915 80, 905 200, 936 200" fill="none" stroke="#1c7a3c" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
-    <line x1="880" y1="253" x2="936" y2="253" stroke="#1c7a3c" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
-    <path d="M880 424 C 915 424, 905 310, 936 310" fill="none" stroke="#1c7a3c" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
-    <text x="1054" y="108" text-anchor="middle" font-size="13" font-weight="600" fill="#1c7a3c">publish / consume events</text>
+    <line x1="560" y1="108" x2="560" y2="138" stroke="#5b3fc4" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#arrow-violet)" marker-end="url(#arrow-violet)"/>
+    <line x1="560" y1="238" x2="560" y2="268" stroke="#5b3fc4" stroke-width="2" stroke-dasharray="6 5" marker-start="url(#arrow-violet)" marker-end="url(#arrow-violet)"/>
+    <rect x="930" y="98" width="238" height="190" rx="14" fill="#e4f3e9" stroke="#1c7a3c"/>
+    <text x="1049" y="140" text-anchor="middle" font-size="21" font-weight="700" fill="#1c7a3c">NATS JetStream</text>
+    <text x="1049" y="178" text-anchor="middle" font-size="17">registro degli upload</text>
+    <text x="1049" y="214" text-anchor="middle" font-size="15" fill="#5b6673">ricorda fin dove</text>
+    <text x="1049" y="236" text-anchor="middle" font-size="15" fill="#5b6673">è arrivato ogni nodo</text>
+    <path d="M762 58 C 850 58, 860 150, 926 150" fill="none" stroke="#1c7a3c" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
+    <line x1="762" y1="188" x2="926" y2="188" stroke="#1c7a3c" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
+    <path d="M762 318 C 850 318, 860 226, 926 226" fill="none" stroke="#1c7a3c" stroke-width="2" marker-start="url(#arrow-green)" marker-end="url(#arrow-green)"/>
   </svg>
-  <div class="footer"><span>Images CDN · monitoring: Prometheus + Grafana (lag, miss rate, peer latency, disk)</span><span>4</span></div>
+  <div class="grid3" style="margin-top:6px">
+    <div class="card"><p><b>Nessun capo:</b> se un nodo cade, gli altri continuano.</p></div>
+    <div class="card green"><p><b>NATS</b> registra gli upload: solo l'annuncio, non il file.</p></div>
+    <div class="card violet"><p><b>I file</b> viaggiano direttamente da un nodo all'altro.</p></div>
+  </div>
+  <div class="footer"><span>Images CDN</span><span>4</span></div>
 </section>
 
-<!-- 5. Rendezvous hashing -->
+<!-- 5. Upload -->
 <section class="slide">
-  <div class="kicker">Owners</div>
-  <h2>Every node knows where an image must be, without asking anyone</h2>
-  <div class="row grow">
-    <div style="flex:0 0 600px">
-      <p style="margin-bottom:14px">Rendezvous hashing: for image <code>9f86…</code>, each node scores <code>hash(node + id)</code>.
-        The 2 highest are its <b>owners</b>.</p>
-      <svg viewBox="0 0 600 250" width="600" height="250">
-        <text x="0" y="40" font-size="18" font-weight="600">node1</text>
-        <rect x="90" y="20" width="410" height="30" rx="6" fill="#2457d6"/><text x="512" y="42" font-size="16">0.82</text>
-        <text x="0" y="110" font-size="18" font-weight="600">node3</text>
-        <rect x="90" y="90" width="336" height="30" rx="6" fill="#2457d6"/><text x="438" y="112" font-size="16">0.67</text>
-        <text x="0" y="180" font-size="18" font-weight="600" fill="#5b6673">node2</text>
-        <rect x="90" y="160" width="155" height="30" rx="6" fill="#c9d3e3"/><text x="257" y="182" font-size="16" fill="#5b6673">0.31</text>
-        <path d="M560 20 v100" stroke="#1c7a3c" stroke-width="3"/>
-        <text x="572" y="76" font-size="15" font-weight="700" fill="#1c7a3c" transform="rotate(90 572 76)">owners</text>
-        <text x="0" y="235" font-size="15" fill="#5b6673">Different images get different owners: load spreads evenly.</text>
-      </svg>
-    </div>
-    <div class="col" style="display:flex; flex-direction:column; gap:14px">
-      <div class="card"><h3>Used twice</h3><p>POST copies the image <b>synchronously</b> to the first reachable owner. A GET miss asks the owners <b>first</b>, then every other node in parallel.</p></div>
-      <div class="card green"><h3>No coordination</h3><p>No metadata service, no lookup table: a pure function of the id and the node list.</p></div>
-      <div class="card amber"><h3>Stable</h3><p>Adding or removing a node only moves the images that node owned. An owner down at upload time: the next node in the ranking takes the copy.</p></div>
-    </div>
+  <div class="kicker">R1 · Upload</div>
+  <h2>Su 2 nodi subito, su tutti in un attimo</h2>
+  <svg viewBox="0 0 1168 250" width="1168" height="250">
+    <g font-size="17">
+      <rect x="0" y="0" width="208" height="112" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+      <circle cx="28" cy="28" r="16" fill="#2457d6"/><text x="28" y="34" text-anchor="middle" fill="#fff" font-weight="700">1</text>
+      <text x="16" y="72">Il client invia</text><text x="16" y="95">l'immagine a un nodo</text>
+      <line x1="210" y1="56" x2="228" y2="56" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="232" y="0" width="208" height="112" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+      <circle cx="260" cy="28" r="16" fill="#2457d6"/><text x="260" y="34" text-anchor="middle" fill="#fff" font-weight="700">2</text>
+      <text x="248" y="72">Il nodo la salva e</text><text x="248" y="95">ne calcola l'impronta</text>
+      <line x1="442" y1="56" x2="460" y2="56" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="464" y="0" width="208" height="112" rx="12" fill="#e8efff" stroke="#2457d6"/>
+      <circle cx="492" cy="28" r="16" fill="#2457d6"/><text x="492" y="34" text-anchor="middle" fill="#fff" font-weight="700">3</text>
+      <text x="480" y="72" font-weight="600">Subito una copia</text><text x="480" y="95" font-weight="600">su un secondo nodo</text>
+      <line x1="674" y1="56" x2="692" y2="56" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="696" y="0" width="208" height="112" rx="12" fill="#e4f3e9" stroke="#1c7a3c"/>
+      <circle cx="724" cy="28" r="16" fill="#1c7a3c"/><text x="724" y="34" text-anchor="middle" fill="#fff" font-weight="700">4</text>
+      <text x="712" y="72" font-weight="600" fill="#1c7a3c">Risponde "OK"</text><text x="712" y="95" fill="#1c7a3c">(201 Created)</text>
+      <line x1="906" y1="56" x2="924" y2="56" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="928" y="0" width="240" height="112" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+      <circle cx="956" cy="28" r="16" fill="#2457d6"/><text x="956" y="34" text-anchor="middle" fill="#fff" font-weight="700">5</text>
+      <text x="944" y="72">Annuncia l'upload</text><text x="944" y="95">sul registro (NATS)</text>
+      <path d="M1048 114 L1048 150 L620 150" fill="none" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="120" y="150" width="496" height="92" rx="12" fill="#efeafd" stroke="#5b3fc4"/>
+      <text x="140" y="186" font-weight="700" fill="#5b3fc4">Gli altri nodi leggono l'annuncio,</text>
+      <text x="140" y="214" fill="#5b3fc4">scaricano l'immagine da chi ce l'ha e verificano l'impronta</text>
+    </g>
+  </svg>
+  <div class="grid2" style="margin-top:8px">
+    <div class="card"><h3>Perché la copia prima di rispondere?</h3><p>Se il primo nodo si rompe subito dopo, l'immagine non è persa: è già su un altro.</p></div>
+    <div class="card amber"><h3>E se il registro non risponde?</h3><p>L'upload riesce lo stesso: l'annuncio resta in coda sul disco e parte appena possibile.</p></div>
   </div>
+  <div style="margin-top:18px"><span class="pill">Di solito l'immagine è su tutti i nodi in meno di un secondo</span></div>
   <div class="footer"><span>Images CDN</span><span>5</span></div>
 </section>
 
-<!-- 6. POST -->
+<!-- 6. Lettura -->
 <section class="slide">
-  <div class="kicker">R1 · Upload and replication</div>
-  <h2>Durable on two nodes before answering, everywhere within a second</h2>
-  <svg viewBox="0 0 1168 380" width="1168" height="380">
-    <g font-size="16" font-weight="700" text-anchor="middle">
-      <rect x="20" y="0" width="140" height="36" rx="8" fill="#f4f6f9" stroke="#d3d9e1"/><text x="90" y="24">Client</text>
-      <rect x="250" y="0" width="160" height="36" rx="8" fill="#e8efff" stroke="#2457d6"/><text x="330" y="24" fill="#2457d6">Node A</text>
-      <rect x="500" y="0" width="160" height="36" rx="8" fill="#e8efff" stroke="#2457d6"/><text x="580" y="24" fill="#2457d6">Owner B</text>
-      <rect x="730" y="0" width="160" height="36" rx="8" fill="#e4f3e9" stroke="#1c7a3c"/><text x="810" y="24" fill="#1c7a3c">NATS</text>
-      <rect x="960" y="0" width="190" height="36" rx="8" fill="#e8efff" stroke="#2457d6"/><text x="1055" y="24" fill="#2457d6">Other nodes</text>
-    </g>
-    <g stroke="#c3cad4" stroke-width="1.5" stroke-dasharray="4 4">
-      <line x1="90" y1="38" x2="90" y2="375"/><line x1="330" y1="38" x2="330" y2="375"/><line x1="580" y1="38" x2="580" y2="375"/>
-      <line x1="810" y1="38" x2="810" y2="375"/><line x1="1055" y1="38" x2="1055" y2="375"/>
-    </g>
-    <g font-size="14">
-      <line x1="90" y1="66" x2="326" y2="66" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-      <text x="100" y="60">1  POST /images (bytes)</text>
-      <rect x="338" y="80" width="230" height="34" rx="6" fill="#f4f6f9" stroke="#d3d9e1"/>
-      <text x="348" y="102">2  type · size · SHA-256 · fsync</text>
-      <line x1="330" y1="140" x2="576" y2="140" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-      <text x="340" y="134">3  PUT /internal/images/{id}</text>
-      <rect x="588" y="152" width="200" height="30" rx="6" fill="#f4f6f9" stroke="#d3d9e1"/>
-      <text x="598" y="172">4  verify hash · store</text>
-      <line x1="580" y1="200" x2="334" y2="200" stroke="#3b4652" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
-      <text x="430" y="194">5  201</text>
-      <line x1="330" y1="232" x2="806" y2="232" stroke="#1c7a3c" stroke-width="2" marker-end="url(#arrow-green)"/>
-      <text x="600" y="226" fill="#1c7a3c">6  publish {id, holders: [A, B]}</text>
-      <line x1="330" y1="264" x2="94" y2="264" stroke="#2457d6" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrow-blue)"/>
-      <text x="150" y="258" fill="#2457d6" font-weight="600">7  201 Created</text>
-      <line x1="810" y1="296" x2="1051" y2="296" stroke="#1c7a3c" stroke-width="2" marker-end="url(#arrow-green)"/>
-      <text x="822" y="290" fill="#1c7a3c">8  event (durable consumer)</text>
-      <line x1="1055" y1="330" x2="334" y2="330" stroke="#5b3fc4" stroke-width="2" marker-end="url(#arrow-violet)"/>
-      <text x="610" y="324" fill="#5b3fc4">9  GET /internal/images/{id} from A or B</text>
-      <rect x="880" y="340" width="270" height="30" rx="6" fill="#f4f6f9" stroke="#d3d9e1"/>
-      <text x="890" y="360">10  verify · fsync · then ack</text>
-    </g>
-  </svg>
-  <div class="grid3" style="margin-top:8px">
-    <div class="card"><h3>Durability</h3><p>Write quorum 2: losing one disk right after the <code>201</code> loses nothing.</p></div>
-    <div class="card green"><h3>At-least-once</h3><p>Ack only after fsync; redelivery is harmless (idempotent); publish deduplicated by id.</p></div>
-    <div class="card amber"><h3>Log unavailable</h3><p>Upload still accepted: the event waits in a persistent outbox.</p></div>
+  <div class="kicker">R2 · Lettura</div>
+  <h2>Ogni nodo risponde, sempre</h2>
+  <div class="row" style="gap:28px">
+    <svg viewBox="0 0 640 400" width="640" height="400">
+      <g font-size="18">
+        <rect x="0" y="160" width="130" height="64" rx="12" fill="#f4f6f9" stroke="#d3d9e1"/>
+        <text x="65" y="198" text-anchor="middle" font-weight="600">GET</text>
+        <line x1="132" y1="192" x2="176" y2="192" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
+        <polygon points="260,130 340,192 260,254 180,192" fill="#fff" stroke="#3b4652" stroke-width="2"/>
+        <text x="260" y="188" text-anchor="middle" font-weight="600">Ce l'ho</text>
+        <text x="260" y="210" text-anchor="middle" font-weight="600">sul disco?</text>
+        <path d="M260 130 L260 60 L380 60" fill="none" stroke="#1c7a3c" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <text x="272" y="100" fill="#1c7a3c" font-weight="700">sì</text>
+        <rect x="384" y="28" width="250" height="64" rx="12" fill="#e4f3e9" stroke="#1c7a3c"/>
+        <text x="509" y="66" text-anchor="middle" fill="#1c7a3c" font-weight="600">Rispondo subito</text>
+        <path d="M260 254 L260 322 L380 322" fill="none" stroke="#9a5b00" stroke-width="2" marker-end="url(#arrow-amber)"/>
+        <text x="272" y="292" fill="#9a5b00" font-weight="700">no</text>
+        <rect x="384" y="240" width="250" height="150" rx="12" fill="#fcf0da" stroke="#9a5b00"/>
+        <text x="400" y="274" fill="#9a5b00" font-weight="700">1. La chiedo ai nodi</text>
+        <text x="422" y="298" fill="#9a5b00" font-weight="700">che devono averla</text>
+        <text x="400" y="332" fill="#9a5b00">2. La restituisco</text>
+        <text x="400" y="366" fill="#9a5b00">3. Me ne tengo una copia</text>
+      </g>
+    </svg>
+    <div class="col" style="display:flex; flex-direction:column; gap:16px">
+      <div class="card"><h3>Come sa a chi chiederla?</h3><p>Ogni nodo calcola da solo quali nodi hanno ricevuto la copia (rendezvous hashing). Nessun servizio centrale da interrogare.</p></div>
+      <div class="card green"><h3>La volta dopo</h3><p>La copia tenuta la rende locale: la richiesta successiva è immediata.</p></div>
+      <div class="card red"><h3>Protezioni</h3><p>Timeout di 2 secondi; un nodo che non risponde viene saltato; 100 richieste per la stessa immagine fanno un solo download.</p></div>
+    </div>
   </div>
   <div class="footer"><span>Images CDN</span><span>6</span></div>
 </section>
 
-<!-- 7. GET -->
+<!-- 7. Riavvio -->
 <section class="slide">
-  <div class="kicker">R2 · Serving an image the node does not have yet</div>
-  <h2>Fetch on miss, from the owners first</h2>
-  <div class="row grow">
-    <svg viewBox="0 0 700 470" width="700" height="470">
-      <g font-size="16" font-weight="700" text-anchor="middle">
-        <rect x="10" y="0" width="140" height="36" rx="8" fill="#f4f6f9" stroke="#d3d9e1"/><text x="80" y="24">Client</text>
-        <rect x="270" y="0" width="160" height="36" rx="8" fill="#e8efff" stroke="#2457d6"/><text x="350" y="24" fill="#2457d6">Node C</text>
-        <rect x="520" y="0" width="170" height="36" rx="8" fill="#e8efff" stroke="#2457d6"/><text x="605" y="24" fill="#2457d6">Owners / peers</text>
-      </g>
-      <g stroke="#c3cad4" stroke-width="1.5" stroke-dasharray="4 4">
-        <line x1="80" y1="38" x2="80" y2="465"/><line x1="350" y1="38" x2="350" y2="465"/><line x1="605" y1="38" x2="605" y2="465"/>
-      </g>
-      <g font-size="14">
-        <line x1="80" y1="68" x2="346" y2="68" stroke="#3b4652" stroke-width="2" marker-end="url(#arrow)"/>
-        <text x="90" y="62">GET /images/{id}</text>
-        <rect x="40" y="84" width="630" height="60" rx="8" fill="none" stroke="#1c7a3c" stroke-dasharray="5 4"/>
-        <text x="50" y="102" fill="#1c7a3c" font-weight="700">on disk</text>
-        <line x1="350" y1="124" x2="84" y2="124" stroke="#1c7a3c" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow-green)"/>
-        <text x="120" y="118" fill="#1c7a3c">200 · X-Cache: HIT · sendfile</text>
-        <rect x="40" y="160" width="630" height="296" rx="8" fill="none" stroke="#9a5b00" stroke-dasharray="5 4"/>
-        <text x="50" y="178" fill="#9a5b00" font-weight="700">miss</text>
-        <line x1="350" y1="206" x2="601" y2="206" stroke="#5b3fc4" stroke-width="2" marker-end="url(#arrow-violet)"/>
-        <text x="362" y="200" fill="#5b3fc4">owners first · timeout 2 s</text>
-        <text x="362" y="232" fill="#5b6673" font-size="13">if owners fail: all other peers in parallel,</text>
-        <text x="362" y="248" fill="#5b6673" font-size="13">first 200 wins</text>
-        <line x1="605" y1="276" x2="354" y2="276" stroke="#3b4652" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
-        <text x="440" y="270">200 bytes</text>
-        <rect x="362" y="292" width="240" height="52" rx="6" fill="#f4f6f9" stroke="#d3d9e1"/>
-        <text x="372" y="314">verify SHA-256</text>
-        <text x="372" y="334">keep a copy (read repair)</text>
-        <line x1="350" y1="376" x2="84" y2="376" stroke="#2457d6" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrow-blue)"/>
-        <text x="130" y="370" fill="#2457d6" font-weight="600">200 · PEER-FETCH</text>
-        <text x="96" y="412" fill="#5b6673" font-size="13">404 only if no node in the cluster has it</text>
-        <text x="96" y="432" fill="#5b6673" font-size="13">next GET on this node: HIT</text>
-      </g>
-    </svg>
-    <div class="col" style="display:flex; flex-direction:column; gap:12px">
-      <div class="card"><h3>Read-your-writes, any node</h3><p>After a <code>201</code> an owner has the image, and every node can compute who the owners are.</p></div>
-      <div class="card green"><h3>Single flight</h3><p>100 concurrent misses for one id: one peer fetch, shared.</p></div>
-      <div class="card amber"><h3>Bulkhead</h3><p>At most 32 fetches at once per node; beyond: fast <code>503</code> + <code>Retry-After</code>.</p></div>
-      <div class="card red"><h3>Circuit breaker</h3><p>A dead or slow peer is skipped for a few seconds instead of slowing every request.</p></div>
-    </div>
+  <div class="kicker">R3 · Riavvio</div>
+  <h2>Utile subito, in pari in pochi secondi</h2>
+  <svg viewBox="0 0 1168 170" width="1168" height="170">
+    <line x1="20" y1="50" x2="1150" y2="50" stroke="#3b4652" stroke-width="3" marker-end="url(#arrow)"/>
+    <g font-size="17" text-anchor="middle">
+      <circle cx="90" cy="50" r="12" fill="#b3261e"/><text x="90" y="22" font-weight="700" fill="#b3261e">crash</text>
+      <text x="90" y="88">il nodo si spegne</text>
+      <circle cx="330" cy="50" r="12" fill="#2457d6"/><text x="330" y="22" font-weight="700" fill="#2457d6">riavvio</text>
+      <text x="330" y="88">ricarica i file</text><text x="330" y="110">dal disco</text>
+      <circle cx="580" cy="50" r="12" fill="#1c7a3c"/><text x="580" y="22" font-weight="700" fill="#1c7a3c">risponde subito</text>
+      <text x="580" y="88">quello che non ha</text><text x="580" y="110">lo chiede agli altri (R2)</text>
+      <circle cx="840" cy="50" r="12" fill="#9a5b00"/><text x="840" y="22" font-weight="700" fill="#9a5b00">recupera</text>
+      <text x="840" y="88">solo gli upload persi,</text><text x="840" y="110">letti dal registro</text>
+      <circle cx="1070" cy="50" r="12" fill="#1c7a3c"/><text x="1070" y="22" font-weight="700" fill="#1c7a3c">in pari</text>
+      <text x="1070" y="88">di solito</text><text x="1070" y="110">in 1-3 secondi</text>
+    </g>
+  </svg>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card green"><h3>Perché è veloce</h3><p>Il registro ricorda, per ogni nodo, l'ultimo upload che ha elaborato. Al riavvio il nodo riceve solo quelli successivi: niente confronti completi.</p></div>
+    <div class="card"><h3>Rete di sicurezza</h3><p>Ogni 30 secondi i nodi confrontano un riassunto di ciò che hanno e scaricano quello che manca (anti-entropy). Serve per i casi rari: nodo spento per giorni, disco sostituito.</p></div>
   </div>
   <div class="footer"><span>Images CDN</span><span>7</span></div>
 </section>
 
-<!-- 8. Recovery -->
+<!-- 8. Guasti -->
 <section class="slide">
-  <div class="kicker">R3 · A node restarts</div>
-  <h2>Useful immediately, synchronized in seconds</h2>
-  <svg viewBox="0 0 1168 200" width="1168" height="200">
-    <line x1="20" y1="60" x2="1150" y2="60" stroke="#3b4652" stroke-width="3" marker-end="url(#arrow)"/>
-    <g font-size="15" text-anchor="middle">
-      <circle cx="80" cy="60" r="11" fill="#b3261e"/><text x="80" y="30" font-weight="700" fill="#b3261e">crash</text>
-      <rect x="140" y="44" width="250" height="32" rx="16" fill="#fbe8e6"/><text x="265" y="65" fill="#b3261e">down: events pile up in the log</text>
-      <circle cx="440" cy="60" r="11" fill="#2457d6"/><text x="440" y="30" font-weight="700" fill="#2457d6">restart</text>
-      <circle cx="640" cy="60" r="11" fill="#1c7a3c"/><text x="640" y="30" font-weight="700" fill="#1c7a3c">replay</text>
-      <circle cx="850" cy="60" r="11" fill="#9a5b00"/><text x="850" y="30" font-weight="700" fill="#9a5b00">anti-entropy</text>
-      <circle cx="1060" cy="60" r="11" fill="#1c7a3c"/><text x="1060" y="30" font-weight="700" fill="#1c7a3c">synced</text>
-    </g>
-    <g font-size="14" fill="#16202a">
-      <text x="440" y="100" text-anchor="middle">remove partial writes</text>
-      <text x="440" y="120" text-anchor="middle">rebuild index from disk</text>
-      <text x="440" y="140" text-anchor="middle" font-weight="600">serve at once: misses</text>
-      <text x="440" y="158" text-anchor="middle" font-weight="600">go to peers (R2)</text>
-      <text x="640" y="100" text-anchor="middle">durable consumer resumes</text>
-      <text x="640" y="120" text-anchor="middle">after the last acked event:</text>
-      <text x="640" y="140" text-anchor="middle" font-weight="600">exactly what was missed</text>
-      <text x="640" y="158" text-anchor="middle">parallel downloads</text>
-      <text x="850" y="100" text-anchor="middle">gap older than retention,</text>
-      <text x="850" y="120" text-anchor="middle">new disk, new node</text>
-      <text x="850" y="140" text-anchor="middle" font-weight="600">+ periodic safety net</text>
-      <text x="1060" y="100" text-anchor="middle">pending events = 0</text>
-      <text x="1060" y="120" text-anchor="middle">full LB weight</text>
-    </g>
-  </svg>
-  <div class="row grow" style="gap:24px">
-    <div style="flex:0 0 560px">
-      <h3 style="font-size:20px; margin-bottom:10px">Anti-entropy without scanning everything</h3>
-      <svg viewBox="0 0 560 170" width="560" height="170">
-        <text x="0" y="16" font-size="14" font-weight="600">node C</text>
-        <text x="300" y="16" font-size="14" font-weight="600">peer</text>
-        <g>
-          <rect x="0" y="26" width="30" height="30" fill="#e8efff"/><rect x="34" y="26" width="30" height="30" fill="#e8efff"/><rect x="68" y="26" width="30" height="30" fill="#fbe8e6" stroke="#b3261e" stroke-width="2"/><rect x="102" y="26" width="30" height="30" fill="#e8efff"/><rect x="136" y="26" width="30" height="30" fill="#e8efff"/><rect x="170" y="26" width="30" height="30" fill="#e8efff"/><rect x="204" y="26" width="30" height="30" fill="#e8efff"/>
-          <rect x="0" y="60" width="30" height="30" fill="#e8efff"/><rect x="34" y="60" width="30" height="30" fill="#e8efff"/><rect x="68" y="60" width="30" height="30" fill="#e8efff"/><rect x="102" y="60" width="30" height="30" fill="#e8efff"/><rect x="136" y="60" width="30" height="30" fill="#e8efff"/><rect x="170" y="60" width="30" height="30" fill="#fbe8e6" stroke="#b3261e" stroke-width="2"/><rect x="204" y="60" width="30" height="30" fill="#e8efff"/>
-        </g>
-        <g transform="translate(300,0)">
-          <rect x="0" y="26" width="30" height="30" fill="#e8efff"/><rect x="34" y="26" width="30" height="30" fill="#e8efff"/><rect x="68" y="26" width="30" height="30" fill="#e4f3e9" stroke="#1c7a3c" stroke-width="2"/><rect x="102" y="26" width="30" height="30" fill="#e8efff"/><rect x="136" y="26" width="30" height="30" fill="#e8efff"/><rect x="170" y="26" width="30" height="30" fill="#e8efff"/><rect x="204" y="26" width="30" height="30" fill="#e8efff"/>
-          <rect x="0" y="60" width="30" height="30" fill="#e8efff"/><rect x="34" y="60" width="30" height="30" fill="#e8efff"/><rect x="68" y="60" width="30" height="30" fill="#e8efff"/><rect x="102" y="60" width="30" height="30" fill="#e8efff"/><rect x="136" y="60" width="30" height="30" fill="#e8efff"/><rect x="170" y="60" width="30" height="30" fill="#e4f3e9" stroke="#1c7a3c" stroke-width="2"/><rect x="204" y="60" width="30" height="30" fill="#e8efff"/>
-        </g>
-        <text x="0" y="122" font-size="14">4096 buckets (first 3 hex chars of the id), one digest each:</text>
-        <text x="0" y="142" font-size="14">count + XOR of the ids, updated in O(1) at every insert.</text>
-        <text x="0" y="162" font-size="14" font-weight="600">Compare 4096 digests, list and download only the differing buckets.</text>
-      </svg>
-    </div>
-    <div class="col" style="display:flex; flex-direction:column; gap:12px">
-      <div class="card green"><h3>Why the log is the fast path</h3><p>The server keeps each node's position: no full scan, no diff, just the missed events.</p></div>
-      <div class="card"><h3>Why the node serves while catching up</h3><p>Fetch on miss covers the gaps, so recovery never blocks availability.</p></div>
-    </div>
-  </div>
+  <div class="kicker">Robustezza</div>
+  <h2>E se qualcosa va storto?</h2>
+  <table>
+    <tr><td>Un nodo si spegne</td><td>Il load balancer lo esclude; gli altri nodi hanno tutte le immagini.</td></tr>
+    <tr><td>Il registro (NATS) non risponde</td><td>Upload e letture funzionano lo stesso; gli annunci partono appena torna.</td></tr>
+    <tr><td>Un nodo è lento</td><td>Dopo 2 secondi si chiede a un altro; per qualche secondo non lo si interroga più.</td></tr>
+    <tr><td>Un file è corrotto</td><td>L'impronta non corrisponde: il file viene scartato e preso da un altro nodo.</td></tr>
+    <tr><td>Il disco si sta riempiendo</td><td>I nuovi upload vengono rifiutati prima che il disco sia pieno del tutto.</td></tr>
+    <tr><td>La rete si divide in due</td><td>Le due parti continuano a lavorare; poi si riallineano senza conflitti.</td></tr>
+  </table>
   <div class="footer"><span>Images CDN</span><span>8</span></div>
 </section>
 
-<!-- 9. Failure scenarios -->
+<!-- 9. Scelte -->
 <section class="slide">
-  <div class="kicker">What can go wrong</div>
-  <h2>Failure scenarios</h2>
-  <table>
-    <tr><th style="width:34%">Scenario</th><th>Behaviour</th></tr>
-    <tr><td><b>A node dies</b></td><td>The load balancer removes it. Every image is on the other nodes; new uploads use the next owner in the ranking.</td></tr>
-    <tr><td><b>Uploading node dies right after 201</b></td><td>The owner has the synchronous copy; the event is in the log, or anti-entropy finds the image.</td></tr>
-    <tr><td><b>NATS unavailable</b></td><td>Uploads accepted through the persistent outbox, GETs work, replication delayed and then caught up.</td></tr>
-    <tr><td><b>Slow peer</b></td><td>2 s timeout and circuit breaker, then the next holder is tried.</td></tr>
-    <tr><td><b>Network partition</b></td><td>Both sides keep accepting uploads. Content-addressed ids cannot conflict: after healing, log and anti-entropy merge the sets.</td></tr>
-    <tr><td><b>Corrupted file</b></td><td>Hash verified on every transfer (and by a periodic scrub): the file is fetched again from a peer.</td></tr>
-    <tr><td><b>Disk almost full</b></td><td>Writes refused with <code>507</code> before the disk is full, and an alert; reads keep working.</td></tr>
-    <tr><td><b>Traffic burst on a cold node</b></td><td>Single flight + bulkhead: bounded peer fetches, fast <code>503</code> beyond, no cascade.</td></tr>
-  </table>
+  <div class="kicker">Le scelte</div>
+  <h2>Cosa ho scelto, e cosa ho scambiato</h2>
+  <div class="grid2">
+    <div class="card"><h3>Allineamento in pochi secondi, non istantaneo</h3><p>Il testo chiede "il prima possibile". Aspettare tutti i nodi renderebbe gli upload lenti, e impossibili con un nodo giù. In cambio: 2 copie subito e lettura da qualsiasi nodo.</p></div>
+    <div class="card green"><h3>Un registro, non invii diretti</h3><p>Con gli invii diretti, un nodo spento perderebbe gli upload. Il registro li conserva e ricorda fin dove è arrivato ogni nodo.</p></div>
+    <div class="card amber"><h3>NATS JetStream</h3><p>Un solo programma, leggero da gestire on-premise. Kafka farebbe lo stesso lavoro, se l'azienda lo usa già.</p></div>
+    <div class="card red"><h3>Ogni nodo ha tutte le immagini</h3><p>Letture velocissime, ma lo spazio totale è quello di un solo disco. Se servisse di più: copie solo su alcuni nodi, con lo stesso meccanismo.</p></div>
+  </div>
   <div class="footer"><span>Images CDN</span><span>9</span></div>
 </section>
 
-<!-- 10. Trade-offs -->
+<!-- 10. Prototipo -->
 <section class="slide">
-  <div class="kicker">Decisions</div>
-  <h2>Trade-offs, chosen deliberately</h2>
-  <div class="grid2 grow" style="align-content:start">
-    <div class="card"><h3>Eventual consistency (AP)</h3><p>The requirement says "as quickly as possible", not "atomically on every node". Waiting for all nodes would make uploads slow and block them when one node is down. Guaranteed instead: durable on 2 nodes before <code>201</code>, readable from every node at once, everywhere in seconds.</p></div>
-    <div class="card green"><h3>Durable log, not direct push</h3><p>Pushing to peers loses whatever a node missed while down. A replayable log with a per-node position is what makes recovery (R3) simple and exact.</p></div>
-    <div class="card amber"><h3>Metadata on the log, bytes over HTTP</h3><p>Images can weigh MB; the log stays small and fast, and bytes travel only between nodes.</p></div>
-    <div class="card violet"><h3>NATS JetStream, Kafka as alternative</h3><p>Same guarantees (durable consumer, ack, redelivery, dedup). JetStream is one binary, simple on premise. Kafka is fine if the company already runs it.</p></div>
-    <div class="card red" style="grid-column: span 2"><h3>Full replication: the limit to know</h3><p>Every node stores every image, as required: reads scale with nodes, capacity equals one node's disk. Beyond that, the same rendezvous hashing moves the cluster to partial replication (R copies per image) with no API change.</p></div>
-  </div>
-  <div class="footer"><span>Images CDN</span><span>10</span></div>
-</section>
-
-<!-- 11. Stability -->
-<section class="slide">
-  <div class="kicker">Built for high traffic</div>
-  <h2>Every path that could take a node down is bounded</h2>
-  <div class="grid4" style="align-content:start">
-    <div class="card"><h3>Memory</h3><p>Uploads read in chunks, cut at 10 MB even without Content-Length.</p></div>
-    <div class="card"><h3>Concurrency</h3><p>Bulkhead on peer fetches, bounded connection pools, bounded replication batches.</p></div>
-    <div class="card"><h3>Latency</h3><p>Timeout on every call, circuit breaker per peer, retries with exponential backoff + jitter.</p></div>
-    <div class="card"><h3>Duplicates</h3><p>Single flight per id; idempotent uploads make every retry and failover safe.</p></div>
-    <div class="card green"><h3>Crash safety</h3><p>tmp + fsync + atomic rename + directory fsync; ack only after fsync.</p></div>
-    <div class="card green"><h3>Disk</h3><p><code>507</code> while 100 MB are still free: outbox, logs and renames keep working.</p></div>
-    <div class="card green"><h3>Scale of sync</h3><p>O(1) digest updates; anti-entropy costs O(4096), not O(images).</p></div>
-    <div class="card green"><h3>Caching</h3><p>Immutable one-year caching, <code>ETag</code>, <code>304</code>: most traffic never reaches a node.</p></div>
-  </div>
-  <p class="muted" style="font-size:17px; margin-top:28px">Watch: replication lag per node (the key metric for R1 and R3), miss rate, peer-fetch latency, open breakers, 503/507 rates, disk usage.</p>
-  <div class="footer"><span>Images CDN</span><span>11</span></div>
-</section>
-
-<!-- 12. Prototype -->
-<section class="slide">
-  <div class="kicker">Proof</div>
-  <h2>A working prototype of this design</h2>
-  <div class="row grow" style="gap:24px">
+  <div class="kicker">Il prototipo</div>
+  <h2>Il design, funzionante</h2>
+  <div class="row" style="gap:24px">
     <div class="col" style="display:flex; flex-direction:column; gap:14px">
-      <div class="card"><h3>Online (free)</h3><p>Render, one container: NATS + 3 isolated nodes + gateway with a live dashboard. Crash and restart nodes from the page.</p></div>
-      <div class="card green"><h3>Offline</h3><p><code>docker compose up</code>: 3 node containers with their own volumes, NATS, gateway. Real <code>docker compose kill node3</code>.</p></div>
-      <div class="card amber"><h3>Quality</h3><p>61 tests (3-node in-process cluster, real NATS), <code>mypy --strict</code>, coverage gate, CI runs the three scenarios end to end.</p></div>
+      <div class="card green"><h3>In locale</h3><p><code>docker compose up</code>: 3 nodi in container separati, NATS e una dashboard. Crash vero con <code>docker compose kill node3</code>.</p></div>
+      <div class="card"><h3>Online</h3><p>Una variante compatta in un solo container, per i limiti del piano gratuito.</p></div>
+      <div class="card amber"><h3>Verificato</h3><p>61 test automatici. A ogni modifica la CI ripete i tre scenari R1, R2, R3.</p></div>
     </div>
     <div class="col">
-      <table>
-        <tr><th>Design</th><th>Code</th></tr>
-        <tr><td>Content-addressed store, digests</td><td><code>storage.py</code></td></tr>
-        <tr><td>Owners</td><td><code>rendezvous.py</code></td></tr>
-        <tr><td>POST, GET, replication, anti-entropy</td><td><code>node.py</code></td></tr>
-        <tr><td>Log, durable consumer</td><td><code>events.py</code></td></tr>
-        <tr><td>Breaker, single flight, bulkhead</td><td><code>resilience.py</code></td></tr>
-        <tr><td>Peer calls, integrity</td><td><code>peers.py</code></td></tr>
-        <tr><td>HTTP API, limits, 503/507</td><td><code>node_app.py</code></td></tr>
-      </table>
-      <p class="muted" style="font-size:15px; margin-top:10px">Simplified in the prototype: FastAPI instead of Nginx for hits, a single NATS server, gateway instead of HAProxy.</p>
+      <div class="card violet" style="height:100%"><h3>Semplificato rispetto al design</h3>
+        <p style="margin-top:8px">FastAPI al posto di Nginx per servire i file</p>
+        <p style="margin-top:8px">Un solo server NATS invece di tre</p>
+        <p style="margin-top:8px">Un piccolo gateway al posto di HAProxy</p>
+        <p style="margin-top:8px">Immagini tenute in memoria (massimo 10 MB)</p>
+      </div>
     </div>
   </div>
-  <div class="footer"><span>Images CDN</span><span>12</span></div>
-</section>
-
-<!-- 13. Closing -->
-<section class="slide" style="justify-content:center">
-  <div class="kicker">In one sentence</div>
-  <p class="quote" style="margin:18px 0 34px; max-width:1100px">Content addressing removes conflicts; synchronous owners and fetch on miss make every node answer at once;
-    a replayable log makes recovery exact, and anti-entropy makes it certain.</p>
-  <div class="grid3">
-    <div class="card"><h3>R1</h3><p>Event on a durable log, pull from holders, 2 copies before 201.</p></div>
-    <div class="card green"><h3>R2</h3><p>Owners computed locally, fetch on miss, read repair.</p></div>
-    <div class="card red"><h3>R3</h3><p>Resume after the last ack, anti-entropy on 4096 digests.</p></div>
-  </div>
+  <p class="quote" style="margin-top:26px">Il nome basato sul contenuto elimina i conflitti; la copia immediata e la lettura dagli altri nodi fanno rispondere sempre qualsiasi nodo; il registro rende il recupero preciso.</p>
+  <div class="footer"><span>Images CDN</span><span>10</span></div>
 </section>
 
 </body>

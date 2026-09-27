@@ -3,7 +3,7 @@
 Design of an on-premise, distributed CDN for images, plus a small working prototype of it.
 
 - [DESIGN.md](DESIGN.md) is the actual answer to the exercise: architecture, flows, failure cases and trade-offs.
-- [docs/architecture.pdf](docs/architecture.pdf) has the same content as slides.
+- [docs/architecture.pdf](docs/architecture.pdf): a short slide deck (in Italian) I use to present the design.
 - [cdn/](cdn/) is the prototype, which I wrote to check that the design holds up and to be able to show it.
 
 In short: images are stored under the SHA-256 of their content, so they are immutable and never conflict. An upload
