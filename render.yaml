@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: images-cdn
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz

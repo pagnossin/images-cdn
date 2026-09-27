@@ -1,0 +1,35 @@
+[project]
+name = "images-cdn"
+version = "1.0.0"
+description = "Prototype of a distributed on-premise images CDN"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["integration: requires a running NATS server with JetStream (NATS_URL)"]
+addopts = "-ra --strict-markers"
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["cdn"]
+
+[tool.coverage.run]
+source = ["cdn"]
+# The all-in-one supervisor needs the nats-server binary: CI covers it end to end by running
+# scripts/demo.py against the container instead.
+omit = ["cdn/supervisor.py"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true

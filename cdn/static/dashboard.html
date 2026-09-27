@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Images CDN</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1b1f24; --muted: #5f6873; --border: #d9dde3; --soft: #eef1f5;
+    --accent: #2457d6; --accent-text: #ffffff; --ok: #1f7a3d; --warn: #9a5b00; --err: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418; --card: #1a1e24; --text: #e6e9ee; --muted: #9aa3ae; --border: #2d333b; --soft: #232932;
+      --accent: #6f9bff; --accent-text: #0b1020; --ok: #5cc98a; --warn: #e3a948; --err: #ff8a80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 48px; }
+  h1 { font-size: 1.55rem; margin: 0; }
+  h2 { font-size: 1rem; margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 4px 0 20px; }
+  .grid { display: grid; gap: 14px; }
+  .nodes { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-bottom: 14px; }
+  .two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-bottom: 14px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-width: 0; }
+  .node-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .node-name { font-weight: 700; font-size: 1.05rem; }
+  .pill { font-size: .78rem; padding: 2px 9px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .err { color: var(--err); } .muted { color: var(--muted); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 12px; font-size: .9rem; }
+  dt { color: var(--muted); } dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button, select { font: inherit; border-radius: 8px; padding: 7px 12px; }
+  button { cursor: pointer; border: 0; background: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--border); font-weight: 500; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  select { background: var(--bg); color: var(--text); border: 1px solid var(--border); max-width: 100%; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  pre { background: var(--soft); padding: 10px; border-radius: 8px; overflow-x: auto; font-size: .8rem; margin: 8px 0 0; white-space: pre-wrap; word-break: break-all; }
+  .preview { max-width: 100%; max-height: 160px; border-radius: 8px; border: 1px solid var(--border); display: block; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: center; }
+  th:first-child, td:first-child { text-align: left; font-family: ui-monospace, Consolas, monospace; }
+  .table-wrap { overflow-x: auto; }
+  .steps { margin: 0; padding-left: 18px; font-size: .92rem; }
+  .steps li { margin-bottom: 6px; }
+  code { background: var(--soft); padding: 1px 5px; border-radius: 4px; font-size: .88em; }
+  .note { font-size: .85rem; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Images CDN: live prototype</h1>
+  <p class="sub">3 nodes, NATS JetStream replication log, this page is the gateway (load balancer).
+    <span id="mode" class="pill muted">loading</span></p>
+
+  <section class="card" style="margin-bottom:14px">
+    <h2>Demo scenarios</h2>
+    <ol class="steps">
+      <li><b>R1, replication:</b> upload an image and watch it appear on every node in the table below.</li>
+      <li><b>R2, read before sync:</b> pause replication on node3, upload an image to node1, then GET it from node3.
+        The response says <code>X-Cache: PEER-FETCH</code>: node3 fetched it from an owner. Resume replication afterwards.</li>
+      <li><b>R3, recovery:</b> crash node3, upload a few images, start node3 again. Its <i>pending</i> events drop to 0
+        as it replays the log from where it stopped.</li>
+    </ol>
+  </section>
+
+  <div class="grid nodes" id="nodes"></div>
+
+  <div class="grid two">
+    <section class="card">
+      <h2>Upload (POST /images)</h2>
+      <div class="row">
+        <button type="button" class="secondary" id="generate">Generate test image</button>
+        <label class="secondary" style="font-size:.9rem">or file <input type="file" id="file" accept="image/png,image/jpeg,image/gif,image/webp"></label>
+      </div>
+      <div class="row">
+        <label>to <select id="upload-node"></select></label>
+        <button type="button" id="upload" disabled>Upload</button>
+      </div>
+      <img id="upload-preview" class="preview" alt="" hidden>
+      <pre id="upload-result" hidden></pre>
+    </section>
+
+    <section class="card">
+      <h2>Read (GET /images/{id})</h2>
+      <div class="row"><select id="read-id" style="flex:1"></select></div>
+      <div class="row">
+        <label>from <select id="read-node"></select></label>
+        <button type="button" id="read">GET</button>
+      </div>
+      <pre id="read-result" hidden></pre>
+      <img id="read-preview" class="preview" alt="" hidden>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Where each image is stored</h2>
+    <div class="table-wrap"><table id="matrix"></table></div>
+    <p class="note">✓ = on the node's disk. Images are identified by the SHA-256 of their content.</p>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let cluster = { nodes: [], supervised: false };
+  let pendingBlob = null;
+  let counter = 0;
+
+  const short = (id) => id.slice(0, 12) + "…";
+
+  function nodeCard(n) {
+    const s = n.status || {};
+    const rep = s.replication || {};
+    let state = ["down", "err"];
+    if (n.up) state = rep.paused ? ["replication paused", "warn"] : rep.connected ? ["up", "ok"] : ["up, log offline", "warn"];
+    const open = Object.entries(s.breakers || {}).filter(([, v]) => v !== "closed").map(([k, v]) => `${k} ${v}`);
+    const st = s.stats || {};
+    const dis = cluster.supervised ? "" : "disabled";
+    const hint = cluster.supervised ? "" : `title="Run: docker compose kill ${n.id} / docker compose start ${n.id}"`;
+    return `<div class="card">
+      <div class="node-head"><span class="node-name">${n.id}</span><span class="pill ${state[1]}">${state[0]}</span></div>
+      <dl>
+        <dt>images</dt><dd>${n.up ? s.images : "–"}</dd>
+        <dt>pending events</dt><dd>${n.up ? (rep.pending ?? "–") : "–"}</dd>
+        <dt>outbox</dt><dd>${n.up ? s.outbox : "–"}</dd>
+        <dt>replicated</dt><dd>${st.replicated || 0}</dd>
+        <dt>peer fetches</dt><dd>${st.reads_peer_fetch || 0}</dd>
+        <dt>anti-entropy fixes</dt><dd>${st.anti_entropy_repaired || 0}</dd>
+        <dt>circuit breakers</dt><dd class="${open.length ? "warn" : ""}">${open.length ? open.join(", ") : "all closed"}</dd>
+      </dl>
+      <div class="actions">
+        <button class="secondary" ${n.up ? "" : "disabled"} onclick="toggleReplication('${n.id}', ${!rep.paused})">${rep.paused ? "Resume" : "Pause"} replication</button>
+        ${n.up || n.process === "running"
+          ? `<button class="secondary" ${dis} ${hint} onclick="nodeAction('${n.id}','crash')">Crash</button>`
+          : `<button ${dis} ${hint} onclick="nodeAction('${n.id}','start')">Start</button>`}
+      </div>
+    </div>`;
+  }
+
+  function knownIds() {
+    const order = new Map();
+    for (const n of cluster.nodes) (n.status?.recent_ids || []).forEach((id, i) => {
+      if (!order.has(id) || order.get(id) > i) order.set(id, i);
+    });
+    return [...order.keys()].sort((a, b) => order.get(a) - order.get(b));
+  }
+
+  function fillSelect(sel, values, labels, keep = true) {
+    const html = values.map((v, i) => `<option value="${v}">${labels ? labels[i] : v}</option>`).join("");
+    if (sel.dataset.html === html) return;  // keeps an open dropdown open
+    const current = sel.value;
+    sel.innerHTML = html;
+    sel.dataset.html = html;
+    if (keep && values.includes(current)) sel.value = current;
+  }
+
+  function render() {
+    $("mode").textContent = cluster.supervised ? "all-in-one: 3 isolated nodes in one container" : "docker compose: nodes are separate containers";
+    $("nodes").innerHTML = cluster.nodes.map(nodeCard).join("");
+    const ids = cluster.nodes.map((n) => n.id);
+    fillSelect($("upload-node"), ["", ...ids], ["any node (load balancer)", ...ids]);
+    fillSelect($("read-node"), ["", ...ids], ["any node (load balancer)", ...ids]);
+    const images = knownIds();
+    fillSelect($("read-id"), images, images.map(short));
+    const head = `<tr><th>image</th>${ids.map((i) => `<th>${i}</th>`).join("")}</tr>`;
+    const rows = images.slice(0, 30).map((img) => `<tr><td>${short(img)}</td>${cluster.nodes.map((n) =>
+      !n.up ? `<td class="muted">?</td>` : (n.status.recent_ids || []).includes(img) ? `<td class="ok">✓</td>` : `<td class="warn">·</td>`
+    ).join("")}</tr>`).join("");
+    $("matrix").innerHTML = head + (rows || `<tr><td colspan="${ids.length + 1}" class="muted">No images yet: upload one.</td></tr>`);
+  }
+
+  async function refresh() {
+    try {
+      cluster = await (await fetch("/api/cluster")).json();
+      render();
+    } catch (e) { /* gateway restarting */ }
+  }
+
+  async function toggleReplication(node, paused) {
+    await fetch(`/api/nodes/${node}/replication`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paused }) });
+    refresh();
+  }
+
+  async function nodeAction(node, action) {
+    const res = await fetch(`/api/nodes/${node}/${action}`, { method: "POST" });
+    if (!res.ok) alert((await res.json()).detail);
+    setTimeout(refresh, 300);
+  }
+
+  function setPending(blob) {
+    pendingBlob = blob;
+    $("upload").disabled = !blob;
+    const img = $("upload-preview");
+    img.src = URL.createObjectURL(blob);
+    img.hidden = false;
+  }
+
+  $("generate").onclick = () => {
+    const c = document.createElement("canvas");
+    c.width = 360; c.height = 200;
+    const ctx = c.getContext("2d");
+    const hue = Math.floor(Math.random() * 360);
+    ctx.fillStyle = `hsl(${hue} 60% 45%)`;
+    ctx.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < 12; i++) {
+      ctx.fillStyle = `hsla(${(hue + 40 * i) % 360} 70% 70% / .5)`;
+      ctx.beginPath();
+      ctx.arc(Math.random() * 360, Math.random() * 200, 10 + Math.random() * 40, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 26px system-ui, sans-serif";
+    ctx.fillText(`test image #${++counter}`, 20, 90);
+    ctx.font = "18px system-ui, sans-serif";
+    ctx.fillText(new Date().toLocaleTimeString(), 20, 122);
+    c.toBlob(setPending, "image/png");
+  };
+
+  $("file").onchange = (e) => e.target.files[0] && setPending(e.target.files[0]);
+
+  $("upload").onclick = async () => {
+    const node = $("upload-node").value;
+    const t0 = performance.now();
+    const res = await fetch(`/images${node ? "?node=" + node : ""}`, { method: "POST", body: pendingBlob, headers: { "Content-Type": pendingBlob.type || "application/octet-stream" } });
+    const ms = Math.round(performance.now() - t0);
+    const body = await res.json();
+    $("upload-result").textContent = `HTTP ${res.status} in ${ms} ms\n` + JSON.stringify(body, null, 2);
+    $("upload-result").hidden = false;
+    if (body.id) { await refresh(); $("read-id").value = body.id; }
+  };
+
+  $("read").onclick = async () => {
+    const id = $("read-id").value;
+    if (!id) return;
+    const node = $("read-node").value;
+    const t0 = performance.now();
+    const res = await fetch(`/images/${id}${node ? "?node=" + node : ""}`, { cache: "no-store" });
+    const ms = Math.round(performance.now() - t0);
+    const h = (k) => res.headers.get(k) || "–";
+    let text = `HTTP ${res.status} in ${ms} ms\nX-Served-By:    ${h("x-served-by")}\nX-Cache:        ${h("x-cache")}\nX-Fetched-From: ${h("x-fetched-from")}\nCache-Control:  ${h("cache-control")}`;
+    const img = $("read-preview");
+    if (res.ok) { img.src = URL.createObjectURL(await res.blob()); img.hidden = false; }
+    else { text += "\n" + JSON.stringify(await res.json()); img.hidden = true; }
+    $("read-result").textContent = text;
+    $("read-result").hidden = false;
+    refresh();
+  };
+
+  refresh();
+  setInterval(refresh, 1000);
+</script>
+</body>
+</html>

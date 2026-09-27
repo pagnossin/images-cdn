@@ -1,0 +1,72 @@
+x-node: &node
+  build: .
+  command: ["node"]
+  depends_on:
+    - nats
+  restart: "no"
+
+x-node-env: &node-env
+  NODES: node1=http://node1:8000,node2=http://node2:8000,node3=http://node3:8000
+  NATS_URL: nats://nats:4222
+  DATA_DIR: /data
+  ANTI_ENTROPY_INTERVAL: "30"
+
+services:
+  nats:
+    image: nats:2-alpine
+    command: ["-js", "-sd", "/data", "-m", "8222"]
+    volumes:
+      - nats-data:/data
+
+  node1:
+    <<: *node
+    environment:
+      <<: *node-env
+      NODE_ID: node1
+    volumes:
+      - node1-data:/data
+
+  node2:
+    <<: *node
+    environment:
+      <<: *node-env
+      NODE_ID: node2
+    volumes:
+      - node2-data:/data
+
+  node3:
+    <<: *node
+    environment:
+      <<: *node-env
+      NODE_ID: node3
+    volumes:
+      - node3-data:/data
+
+  gateway:
+    build: .
+    command: ["gateway"]
+    environment:
+      NODES: node1=http://node1:8000,node2=http://node2:8000,node3=http://node3:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - node1
+      - node2
+      - node3
+
+  tests:
+    build:
+      context: .
+      target: test
+    environment:
+      NATS_URL: nats://nats:4222
+      REQUIRE_NATS: "1"
+    depends_on:
+      - nats
+    profiles: ["test"]
+
+volumes:
+  nats-data:
+  node1-data:
+  node2-data:
+  node3-data:
